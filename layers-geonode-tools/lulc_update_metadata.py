@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # Geonode
 
+__version__ = "0.2"
+
 from geonode.settings import GEONODE_APPS
 import geonode.settings as settings
 import os
@@ -184,7 +186,7 @@ Note: Datasets subject to updating. Maps show land cover on date of data acquisi
 Major Source of Information: LiDAR Datasets from DREAM/Phil-LiDAR 1 Program
 
 Accuracy and Limitations: The accuracy of the delivered Products/ouputs are dependent on the source datasets, and limitations of the software and algorithms used and implemented procedures. The Products are provided "as is" without any warranty of any kind, expressed or implied. Phil-LiDAR 2 Program does not warrant that the Products will meet the needs or expectations of the end users, or that the operations or use of the Products will be error free.""".format(abstract_landcover)
-	
+
 	else:
 		layer_abstract = """Maps prepared by {0} (Phil-LiDAR 2 Program B) and reviewed by University of the Philippines Training Center for Applied Geodesy and Photogrammetry (Phil-LiDAR 2 Program A Project 1). The use of the datasets provided herewith are covered by End Users License Agreement (EULA). Shapefiles include initial {1}
 
@@ -222,7 +224,7 @@ Accuracy and Limitations: The accuracy of the delivered Products/ouputs are depe
 		for keyword in keywords_list:
 			print keyword
 			layer.keywords.add(keyword)
-		
+
 	if layer.category != TopicCategory.objects.get(identifier="imageryBaseMapsEarthCover"):
 		print layer.name, ': Setting layer.category...'
 		has_layer_changes = True
