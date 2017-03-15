@@ -4,6 +4,8 @@
 ##sudo geonode shell
 ##execfile("upload_reports.py")
 
+__version__ = "0.2"
+
 import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "geonode.settings")
 from django.contrib.auth.models import Group
@@ -19,7 +21,7 @@ from guardian.shortcuts import assign_perm, get_anonymous_user
 print "Starting..."
 
 #delete existing documents
-queryset = Document.objects.all()    
+queryset = Document.objects.all()
 for d in queryset:
         rb = ResourceBase.objects.get(id=d.resourcebase_ptr_id)
         d.delete()
@@ -39,22 +41,22 @@ print "Total number of jpeg files: ", file_count
 ctr = 1
 
 for file in os.listdir("/home/geonode/Data/Documents/"):
-        
+
         print "Uploading ", str(ctr), " of ", file_count, ":", file
         #SULTAN_NAGA_DIMAPORO__LANAO_DEL_NORTE__AGRICOASTLANDCOVER
         name = file.replace(".jpg","")
         name1 = name.replace("__AGRICOASTLANDCOVER", " Agricultural and Coastal Land Cover Map").replace("__AGRILANDCOVER", " Agricultural Land Cover Map")
-        name2 = name1.replace("__",", ").replace("_", " ").title()        
+        name2 = name1.replace("__",", ").replace("_", " ").title()
         t =  open('/home/geonode/Data/Documents/' + file, 'r')
         f = SimpleUploadedFile(file, t.read(), 'application/jpeg')
         superuser = Profile.objects.get(id=1)
         if len(name) >= 100: name = name[:99]
         c = Document.objects.create(doc_file=f,owner=superuser, title=name2, abstract=abstract_text)
         #c.set_default_permissions()
-        
+
         anon_group = Group.objects.get(name='anonymous')
         assign_perm('view_resourcebase', anon_group, c.get_self_resource())
         assign_perm('view_resourcebase', get_anonymous_user(),
                     c.get_self_resource())
-        ctr+=1    
+        ctr+=1
 print "Finished"
