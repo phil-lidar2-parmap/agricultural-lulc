@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # Geonode
 
+__version__ = "0.2"
+
 from geonode.settings import GEONODE_APPS
 import geonode.settings as settings
 import subprocess
@@ -18,9 +20,9 @@ from threading import Thread
 
 def seed_layers(layer):
 	try:
-			out = subprocess.check_output(['/home/geonode/geonode/' + '/gwc.sh', 'seed',
+			out = subprocess.check_output(['/home/geonode/geonode/scripts/utils/' + '/gwc.sh', 'seed',
 																		 '{0}:{1}'.format(
-																				 layer.workspace, layer.name), 'EPSG:4326', '-v', '-a',
+																				 layer.workspace, layer.name), 'EPSG:900913', '-v', '-a',
 																		 settings.OGC_SERVER['default']['USER'] + ':' +
 																		 settings.OGC_SERVER['default'][
 																				 'PASSWORD'], '-u',
