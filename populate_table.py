@@ -1,6 +1,7 @@
+# Windows
+# ArcPy
+
 __version__ = "0.5.3"
-__authors__ = ["Jok Laurente", "Nerissa Gatdula"]
-__email__ = ["jalaurente@dream.upd.edu.ph", "jmelaurente@gmail.com", "nerigatdula@gmail.com"]
 __description__ = 'Automation of PARMap schema'
 
 # import modules
