@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Geonode
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 from geonode.settings import GEONODE_APPS
 import geonode.settings as settings
@@ -20,7 +20,7 @@ from threading import Thread
 
 def seed_layers(layer):
 	try:
-			out = subprocess.check_output(['/geonode/scripts/utils/agricultural-lulc/layers-geonode-tools' + '/gwc.sh', 'seed',
+			out = subprocess.check_output(['/home/geonode/geonode/scripts/utils/agricultural-lulc/layers-geonode-tools' + '/gwc.sh', 'seed',
 																		 '{0}:{1}'.format(
 																				 layer.workspace, layer.name), 'EPSG:900913', '-v', '-a',
 																		 settings.OGC_SERVER['default']['USER'] + ':' +
@@ -38,10 +38,9 @@ def seed_layers(layer):
 if __name__ == "__main__":
 
 	# Get lulc layers uploaded within the past 2 days
-    lastday = datetime.now() - timedelta(days=2)
-    layers = Layer.objects.filter(
-        Q(name__iregex=r'parmap') &
-        Q(upload_session__date__gte=lastday))
+	lastday = datetime.now() - timedelta(days=2)
+	layers = Layer.objects.filter(Q(name__iregex=r'parmap') & \
+	Q(upload_session__date__gte=lastday))
 
 	total = len(layers)
 	print 'Updating', total, 'layers!'
