@@ -20,7 +20,7 @@ from threading import Thread
 
 def seed_layers(layer):
 	try:
-			out = subprocess.check_output(['/home/geonode/geonode/scripts/utils/' + '/gwc.sh', 'seed',
+			out = subprocess.check_output(['/geonode/scripts/utils/agricultural-lulc/layers-geonode-tools' + '/gwc.sh', 'seed',
 																		 '{0}:{1}'.format(
 																				 layer.workspace, layer.name), 'EPSG:900913', '-v', '-a',
 																		 settings.OGC_SERVER['default']['USER'] + ':' +
