@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Geonode
 
-__version__ = "0.2"
+__version__ = "0.2.1"
 
 from geonode.settings import GEONODE_APPS
 import geonode.settings as settings
@@ -37,9 +37,11 @@ def seed_layers(layer):
 
 if __name__ == "__main__":
 
-	# Get layers with "_parmap" keyword
-
-	layers = Layer.objects.filter(name__icontains='_parmap')
+	# Get lulc layers uploaded within the past 2 days
+    lastday = datetime.now() - timedelta(days=2)
+    layers = Layer.objects.filter(
+        Q(name__iregex=r'parmap') &
+        Q(upload_session__date__gte=lastday))
 
 	total = len(layers)
 	print 'Updating', total, 'layers!'
