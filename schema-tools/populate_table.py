@@ -1,7 +1,7 @@
 # Windows
 # ArcPy
 
-__version__ = "0.5.3"
+__version__ = "0.5.4"
 __description__ = 'Automation of PARMap schema'
 
 # import modules
@@ -78,14 +78,15 @@ try:
 
 	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
 		"]: Deleting intermediate fields")
-	arcpy.DeleteField_management(fc, fields_identity) 
+	arcpy.DeleteField_management(fc, fields_identity)
 
 	message_done_location = "[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
 	"]: Done updating! Starting to iterate through features"
 	arcpy.AddMessage(message_done_location)
 except Exception:
-	arcpy.AddError((traceback.format_exc()))    
+	arcpy.AddError((traceback.format_exc()))
 	arcpy.AddError((sys.exc_info()[0]))
+	sys.exit()
 
 try:
 	# loop through features of LULC
@@ -119,7 +120,7 @@ try:
 				# get the nearest barangay from feature
 				arcpy.GenerateNearTable_analysis(geom_fc, nso_brgy, temp_near, "", "NO_LOCATION", \
 					"NO_ANGLE", "CLOSEST")
-				
+
 				# get the FID of the nearest barangay
 				near_cursor = arcpy.da.SearchCursor(temp_near, fields_near)
 				for near_row in near_cursor:
@@ -140,7 +141,7 @@ try:
 			# loop through the rows in dynamic sheet
 			# get the values set by SUCs
 			for x in range(sheet_dynamic.nrows):
-			
+
 				# get the dynamic id
 				id_dynamic = sheet_dynamic.row(x)[0].value
 
@@ -163,7 +164,7 @@ try:
 
 						# check if dynamic id and lulc_type_code is the same
 						if id_dynamic == lulc_type_code:
-							
+
 							# assign the values for each field
 							row[0] = lulc_type_code
 							row[1] = lulc_class_code
@@ -179,7 +180,7 @@ try:
 								row[8] = province_name
 								row[9] = region_no
 
-			# update current row			
+			# update current row
 			cursor.updateRow(row)
 
 			# check if current feature was updated
@@ -201,6 +202,6 @@ try:
 	arcpy.Delete_management(temp_point)
 	arcpy.Delete_management(temp_identity)
 
-except Exception:   
-	arcpy.AddError((traceback.format_exc()))    
+except Exception:
+	arcpy.AddError((traceback.format_exc()))
 	arcpy.AddError((sys.exc_info()[0]))
