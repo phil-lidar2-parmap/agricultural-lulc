@@ -1,7 +1,7 @@
 # Windows
 # ArcPy
 
-__version__ = "0.1.0"
+__version__ = "0.1"
 __description__ = 'Automation of PARMap schema (location not included)'
 
 # import modules
