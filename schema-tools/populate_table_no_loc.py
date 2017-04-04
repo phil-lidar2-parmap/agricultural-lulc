@@ -29,17 +29,6 @@ fc = os.path.join(current_gdb, "AgriCoast_LULC")
 
 # define field lists
 fields = ['MAIN_TYPE', 'MAIN_CLASS', 'RESOURCE_TYPE', 'CLASSIFICATION', 'ID_CLASS','ID_TYPE', 'SHAPE@']
-# fields = ['MAIN_TYPE', 'MAIN_CLASS', 'RESOURCE_TYPE', 'CLASSIFICATION', 'ID_CLASS','ID_TYPE',\
-# 'BARANGAY', 'CITYMUNI', 'PROVINCE', 'REGION', 'SHAPE@']
-# fields_sort = ['OBJECTID', 'NAMEJN2002', 'CITYMUNI', 'PROVINCE', 'REGION_NO']
-# fields_near = ['NEAR_FID']
-# fields_nso = ['OBJECTID_1', 'NAMEJN2002', 'CITYMUNI', 'PROVINCE', 'REGION_NO']
-# fields_identity = ['NAMEJN2002', 'CITYMUNI_1', 'PROVINCE_1', 'REGION_NO']
-
-# intermediate data
-# temp_point = os.path.join(current_gdb, "temp_point")
-# temp_near = os.path.join(current_gdb, "temp_near")
-# temp_identity = os.path.join(current_gdb, "temp_identity")
 
 # open excel file
 book = open_workbook(excel_file,on_demand=True)
@@ -51,42 +40,6 @@ sheet_dynamic = book.sheet_by_name("Dynamic")
 # get the number of features
 result = arcpy.GetCount_management(fc)
 feature_count = int(result.getOutput(0))
-# message_get_location = "[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
-# "]: Updating the location attributes of LULC"
-# arcpy.AddMessage(message_get_location)
-
-# try:
-# 	# Update the location attributes
-# 	# Limited to features intersected with brgy boundary
-# 	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
-# 		"]: Converting feature to point")
-# 	arcpy.FeatureToPoint_management(fc, temp_point, "CENTROID")
-#
-# 	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
-# 		"]: Calculating intersection")
-# 	arcpy.Identity_analysis(temp_point, nso_brgy, temp_identity, "ALL")
-#
-# 	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
-# 		"]: Joining tables")
-# 	arcpy.JoinField_management(fc, "OBJECTID", temp_identity, "ORIG_FID", fields_identity)
-#
-# 	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
-# 		"]: Calculating fields")
-# 	arcpy.CalculateField_management(fc, "BARANGAY", '!NAMEJN2002!', "PYTHON_9.3")
-# 	arcpy.CalculateField_management(fc, "CITYMUNI", '!CITYMUNI_1!', "PYTHON_9.3")
-# 	arcpy.CalculateField_management(fc, "PROVINCE", '!PROVINCE_1!', "PYTHON_9.3")
-# 	arcpy.CalculateField_management(fc, "REGION", '!REGION_NO!', "PYTHON_9.3")
-#
-# 	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
-# 		"]: Deleting intermediate fields")
-# 	arcpy.DeleteField_management(fc, fields_identity)
-#
-# 	message_done_location = "[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
-# 	"]: Done updating! Starting to iterate through features"
-# 	arcpy.AddMessage(message_done_location)
-# except Exception:
-# 	arcpy.AddError((traceback.format_exc()))
-# 	arcpy.AddError((sys.exc_info()[0]))
 
 try:
 	# loop through features of LULC
@@ -94,7 +47,6 @@ try:
 	ctr = 0
 	for row in cursor:
 		null_field = False
-		location_attribute = True
 
 		ctr += 1
 
@@ -112,31 +64,6 @@ try:
 			fc_main_type = row[0]
 			geom_fc = row[6]
 			lulc_type_code = ""
-
-			# check if barangay field is null
-			# if not row[6]:
-			# 	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "]: Calculating nearest feature")
-			#
-			# 	# get the nearest barangay from feature
-			# 	arcpy.GenerateNearTable_analysis(geom_fc, nso_brgy, temp_near, "", "NO_LOCATION", \
-			# 		"NO_ANGLE", "CLOSEST")
-			#
-			# 	# get the FID of the nearest barangay
-			# 	near_cursor = arcpy.da.SearchCursor(temp_near, fields_near)
-			# 	for near_row in near_cursor:
-			# 		near_fid = near_row[0]
-			#
-			# 	# get the barangay, muni, province and region name from boundary
-			# 	brgy_cursor = arcpy.da.SearchCursor(nso_brgy, fields_nso)
-			# 	for brgy_row in brgy_cursor:
-			# 		if brgy_row[0] == near_fid:
-			# 			brgy_name = brgy_row[1]
-			# 			muni_name = brgy_row[2]
-			# 			province_name = brgy_row[3]
-			# 			region_no = brgy_row[4]
-			# 			break
-			#
-			# 	location_attribute = False
 
 			# loop through the rows in dynamic sheet
 			# get the values set by SUCs
@@ -173,13 +100,6 @@ try:
 							row[4] = id_class
 							row[5] = id_type
 
-							# update fields if location attributes have null values
-							# if not location_attribute:
-							# 	row[6] = brgy_name
-							# 	row[7] = muni_name
-							# 	row[8] = province_name
-							# 	row[9] = region_no
-
 			# update current row
 			cursor.updateRow(row)
 
@@ -196,11 +116,6 @@ try:
 			message_result = "[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
 				"]: Feature's attribute already exists. Skipping!"
 			arcpy.AddMessage(message_result)
-
-# delete intermediate data
-	# arcpy.Delete_management(temp_near)
-	# arcpy.Delete_management(temp_point)
-	# arcpy.Delete_management(temp_identity)
 
 except Exception:
 	arcpy.AddError((traceback.format_exc()))
