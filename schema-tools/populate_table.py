@@ -1,7 +1,7 @@
 # Windows
 # ArcPy
 
-__version__ = "0.5.4"
+__version__ = "0.6"
 __description__ = 'Automation of PARMap schema'
 
 # import modules
@@ -29,16 +29,15 @@ nso_brgy = os.path.join(current_gdb, "NSO_Brgy")
 
 # define field lists
 fields = ['MAIN_TYPE', 'MAIN_CLASS', 'RESOURCE_TYPE', 'CLASSIFICATION', 'ID_CLASS','ID_TYPE',\
-'BARANGAY', 'CITYMUNI', 'PROVINCE', 'REGION', 'SHAPE@']
-fields_sort = ['OBJECTID', 'NAMEJN2002', 'CITYMUNI', 'PROVINCE', 'REGION_NO']
+'BARANGAY', 'CITYMUNI', 'PROVINCE', 'REGION', 'OBJECTID', 'SHAPE@']
 fields_near = ['NEAR_FID']
 fields_nso = ['OBJECTID_1', 'NAMEJN2002', 'CITYMUNI', 'PROVINCE', 'REGION_NO']
-fields_identity = ['NAMEJN2002', 'CITYMUNI_1', 'PROVINCE_1', 'REGION_NO']
+fields_intersect = ['ORIG_FID','NAMEJN2002', 'CITYMUNI_1', 'PROVINCE_1', 'REGION_NO']
 
 # intermediate data
-temp_point = os.path.join(current_gdb, "temp_point")
-temp_near = os.path.join(current_gdb, "temp_near")
-temp_identity = os.path.join(current_gdb, "temp_identity")
+temp_point = r"in_memory\temp_point"
+temp_near = r"in_memory\temp_near"
+temp_intersect = r"in_memory\temp_intersect"
 
 # open excel file
 book = open_workbook(excel_file,on_demand=True)
@@ -63,22 +62,7 @@ try:
 
 	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
 		"]: Calculating intersection")
-	arcpy.Identity_analysis(temp_point, nso_brgy, temp_identity, "ALL")
-
-	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
-		"]: Joining tables")
-	arcpy.JoinField_management(fc, "OBJECTID", temp_identity, "ORIG_FID", fields_identity)
-
-	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
-		"]: Calculating fields")
-	arcpy.CalculateField_management(fc, "BARANGAY", '!NAMEJN2002!', "PYTHON_9.3")
-	arcpy.CalculateField_management(fc, "CITYMUNI", '!CITYMUNI_1!', "PYTHON_9.3")
-	arcpy.CalculateField_management(fc, "PROVINCE", '!PROVINCE_1!', "PYTHON_9.3")
-	arcpy.CalculateField_management(fc, "REGION", '!REGION_NO!', "PYTHON_9.3")
-
-	arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
-		"]: Deleting intermediate fields")
-	arcpy.DeleteField_management(fc, fields_identity)
+	arcpy.Intersect_analysis([temp_point,nso_brgy], temp_intersect, "ALL", "", "POINT")
 
 	message_done_location = "[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + \
 	"]: Done updating! Starting to iterate through features"
@@ -94,7 +78,7 @@ try:
 	ctr = 0
 	for row in cursor:
 		null_field = False
-		location_attribute = True
+		location_attribute = False
 
 		ctr += 1
 
@@ -110,11 +94,24 @@ try:
 		# check if attribute fields have values
 		if null_field is True:
 			fc_main_type = row[0]
-			geom_fc = row[10]
+			geom_fc = row[11]
+			obj_id = row[10]
 			lulc_type_code = ""
 
-			# check if barangay field is null
-			if not row[6]:
+			# arcpy.MakeFeatureLayer_management(temp_intersect, "layer_intersect")
+			expression_intersect = "{0} = {1}".format('"ORIG_FID"', obj_id)
+			
+			cursor_intersect = arcpy.da.SearchCursor(temp_intersect, fields_intersect)
+			for row_intersect in cursor_intersect:
+				if row_intersect[0] == obj_id:
+					brgy_name = row_intersect[1]
+					muni_name = row_intersect[2]
+					province_name = row_intersect[3]
+					region_no = row_intersect[4]
+					location_attribute = True
+					break
+
+			if not location_attribute:
 				arcpy.AddMessage("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "]: Calculating nearest feature")
 
 				# get the nearest barangay from feature
@@ -135,8 +132,6 @@ try:
 						province_name = brgy_row[3]
 						region_no = brgy_row[4]
 						break
-
-				location_attribute = False
 
 			# loop through the rows in dynamic sheet
 			# get the values set by SUCs
@@ -172,13 +167,10 @@ try:
 							row[3] = classification_code
 							row[4] = id_class
 							row[5] = id_type
-
-							# update fields if location attributes have null values
-							if not location_attribute:
-								row[6] = brgy_name
-								row[7] = muni_name
-								row[8] = province_name
-								row[9] = region_no
+							row[6] = brgy_name
+							row[7] = muni_name
+							row[8] = province_name
+							row[9] = region_no
 
 			# update current row
 			cursor.updateRow(row)
@@ -198,9 +190,7 @@ try:
 			arcpy.AddMessage(message_result)
 
 # delete intermediate data
-	arcpy.Delete_management(temp_near)
-	arcpy.Delete_management(temp_point)
-	arcpy.Delete_management(temp_identity)
+	arcpy.Delete_management("in_memory")
 
 except Exception:
 	arcpy.AddError((traceback.format_exc()))
