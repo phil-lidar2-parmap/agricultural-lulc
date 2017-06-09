@@ -97,9 +97,6 @@ try:
 			geom_fc = row[11]
 			obj_id = row[10]
 			lulc_type_code = ""
-
-			# arcpy.MakeFeatureLayer_management(temp_intersect, "layer_intersect")
-			expression_intersect = "{0} = {1}".format('"ORIG_FID"', obj_id)
 			
 			cursor_intersect = arcpy.da.SearchCursor(temp_intersect, fields_intersect)
 			for row_intersect in cursor_intersect:
