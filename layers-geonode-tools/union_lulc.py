@@ -1,4 +1,4 @@
-__version__ = "0.1"
+__version__ = "0.2"
 __authors__ = "Jok Laurente"
 __email__ = ["jmelaurente@gmail.com"]
 __description__ = 'Union of LULC shapefiles'
@@ -6,9 +6,7 @@ __description__ = 'Union of LULC shapefiles'
 import arcpy
 import os
 
-arcpy.env.overwriteOutput = True
-
-input_directory = r"D:\union_lulc\input"
+input_directory = r"D:\union_lulc\input2"
 output_directory = r"D:\union_lulc\output"
 
 codeblock_union = """def getDominantValue(code1, code2):
@@ -16,40 +14,38 @@ codeblock_union = """def getDominantValue(code1, code2):
 	coastal = ["46","47","49","52"]
 	agri = ["08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26", "27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","51","55"]
 	non_agri = ["01","02","03","04","05","06","07","44","45","48","50","53","54"]
-
-	utype = ""
-	# objects that are in the same group will return 'SAME' value
-	if code1 in coastal and code2 in coastal:
-		# get nearest feature
-		utype = "SAME"
-	elif code1 in agri and code2 in agri:
-		# get nearest feautre
-		utype = "SAME"
-	elif code1 in non_agri and code2 in non_agri:
-		# get neartest feature
-		utype = "SAME"
-	# objects that differ from each other will get the dominant type
-	elif code1 in coastal:
-		utype = code1
-	elif code2 in coastal:
-		utype = code2
-	elif code1 in agri:
-		utype = code1
-	elif code2 in agri:
-		utype = code2
-	elif code1 in non_agri:
-		utype = code1
-	elif code2 in non_agri:
-		utype = code2
-	else:
-		utype = "00"
+	utype = code1
+	if code1 <> code2:
+		# objects that are in the same group will return 'SAME' value
+		if code1 in coastal and code2 in coastal:
+			# get nearest feature
+			utype = "SAME"
+		elif code1 in agri and code2 in agri:
+			# get nearest feautre
+			utype = "SAME"
+		elif code1 in non_agri and code2 in non_agri:
+			# get neartest feature
+			utype = "SAME"
+		# objects that differ from each other will get the dominant type
+		elif code1 in coastal:
+			utype = code1
+		elif code2 in coastal:
+			utype = code2
+		elif code1 in agri:
+			utype = code1
+		elif code2 in agri:
+			utype = code2
+		elif code1 in non_agri:
+			utype = code1
+		elif code2 in non_agri:
+			utype = code2
+		else:
+			utype = "00"
 	return utype"""
 
 codeblock_type = """def checkType(field1, field2, type1, type2, utype):
-	ufield = ""
-	if utype == type1:
-		ufield = field1
-	elif utype == type2:
+	ufield = field1
+	if utype == type2:
 		ufield = field2
 	return ufield"""
 
@@ -88,8 +84,47 @@ def calculateOtherFields(layer):
 	arcpy.CalculateField_management(layer, "BARANGAY", "checkType(!BARANGAY!, !BARANGAY_1!, !MAIN_TYPE!, !MAIN_TYP_1!, !UTYPE!)", "PYTHON_9.3", codeblock_type)
 	arcpy.CalculateField_management(layer, "REMARKS", "checkType(!REMARKS!, !REMARKS_1!, !MAIN_TYPE!, !MAIN_TYP_1!, !UTYPE!)", "PYTHON_9.3", codeblock_type)
 	arcpy.CalculateField_management(layer, "MAIN_TYPE", "!UTYPE!", "PYTHON_9.3")
-	arcpy.DeleteField_management(layer, ["CLASSIFI_1", "RESOURCE_1", "ID_CLASS_1", "MAIN_CLA_1", "OTHER_CL_2", "OTHER_CL_3", "CLASS_DE_1", "ID_TYPE_1", "MAIN_TYP_1" "OTHER_TY_2", "OTHER_TY_3", "TYPE_DES_1", "DATA_SOU_1", "DATASET__1", "FARMING__1", "CROP_PLA_1","JAN_1", "FEB_1", "MAR_1",
-	"APR_1", "MAY_1", "JUN_1", "JUL_1", "AUG_1", "SEP_1", "OCT_1", "NOV_1", "DEC_1", "REGION_1", "PROVINCE_1", "CITYMUNI_1", "BARANGAY_1", "REMARKS_1", "AREA_1"])
+	arcpy.DeleteField_management(layer, ["CLASSIFI_1", "RESOURCE_1", "ID_CLASS_1", "MAIN_CLA_1", "OTHER_CL_2", "OTHER_CL_3", "CLASS_DE_1", "ID_TYPE_1", "MAIN_TYP_1", "OTHER_TY_2", "OTHER_TY_3", "TYPE_DES_1", "DATA_SOU_1", "DATASET__1", "FARMING__1", "CROP_PLA_1","JAN_1", "FEB_1", "MAR_1",
+	"APR_1", "MAY_1", "JUN_1", "JUL_1", "AUG_1", "SEP_1", "OCT_1", "NOV_1", "DEC_1", "REGION_1", "PROVINCE_1", "CITYMUNI_1", "BARANGAY_1", "REMARKS_1", "AREA_1", "SHAPE_Le_1", "SHAPE_Ar_1"])
+
+def calculateJoinedFields(layer):
+	# calculate other fields
+	arcpy.CalculateField_management(layer,"MAIN_TYPE","!MAIN_TYP_1!","PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "CLASSIFICA", "!CLASSIFI_1!","PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "RESOURCE_T", "!RESOURCE_1!","PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "ID_CLASS", "!ID_CLASS_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "MAIN_CLASS", "!MAIN_CLA_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "OTHER_CLAS", "!OTHER_CL_2!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "OTHER_CL_1", "!OTHER_CL_3!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "CLASS_DESC", "!CLASS_DE_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "ID_TYPE", "!ID_TYPE_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "OTHER_TYPE", "!OTHER_TY_2!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "OTHER_TY_1", "!OTHER_TY_3!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "TYPE_DESCR", "!TYPE_DES_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "DATA_SOURC", "!DATA_SOU_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "DATASET_AC", "!DATASET__1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "FARMING_SY", "!FARMING__1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "CROP_PLANT", "!CROP_PLA_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "JAN", "!JAN_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "FEB", "!FEB_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "MAR", "!MAR_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "APR", "!APR_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "MAY", "!MAY_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "JUN", "!JUN_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "JUL", "!JUL_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "AUG", "!AUG_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "SEP", "!SEP_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "OCT", "!OCT_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "NOV", "!NOV_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "DEC", "!DEC_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "REGION", "!REGION_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "PROVINCE", "!PROVINCE_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "CITYMUNI", "!CITYMUNI_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "BARANGAY", "!BARANGAY_1!", "PYTHON_9.3")
+	arcpy.CalculateField_management(layer, "REMARKS", "!REMARKS_1!", "PYTHON_9.3")
+
+	arcpy.DeleteField_management(layer, ["UTYPE", "NEAR_FID", "NEAR_DIST","CLASSIFI_1", "RESOURCE_1", "ID_CLASS_1", "MAIN_CLA_1", "OTHER_CL_2", "OTHER_CL_3", "CLASS_DE_1", "ID_TYPE_1", "MAIN_TYP_1", "OTHER_TY_2", "OTHER_TY_3", "TYPE_DES_1", "DATA_SOU_1", "DATASET__1", "FARMING__1", "CROP_PLA_1","JAN_1", "FEB_1", "MAR_1",
+	"APR_1", "MAY_1", "JUN_1", "JUL_1", "AUG_1", "SEP_1", "OCT_1", "NOV_1", "DEC_1", "REGION_1", "PROVINCE_1", "CITYMUNI_1", "BARANGAY_1", "REMARKS_1"])
 
 if __name__ == "__main__":
 	# loop thru the shapefiles in input directory
@@ -116,13 +151,19 @@ if __name__ == "__main__":
 					# calculate other fields
 					calculateOtherFields("union_true")
 
-					# get the nearest feature of union-false layer
+					#get the nearest feature of union-false layer
 					arcpy.Near_analysis("union_false", "union_true")
+
 					# join the fields union-true and union-false to identify what values would be assigned
-					# arcpy.JoinField_management("union_false", "NEAR_FID", "union_true", "FID", ["UTYPE","CLASSIFICA", "CLASSIFI_1", "RESOURCE_T", "RESOURCE_1", "MAIN_CLASS", "MAIN_CLA_1"])
-					arcpy.JoinField_management("union_false", "NEAR_FID", "union_true", "FID", ["UTYPE"])
-					# get the dominant value from the joined fields
-					arcpy.CalculateField_management("union_false","UTYPE","!UTYPE_1!","PYTHON_9.3")
+					arcpy.JoinField_management("union_false", "NEAR_FID", "union_true", "FID", ["CLASSIFICA", "RESOURCE_T", "ID_CLASS", "MAIN_CLASS", "OTHER_CLAS", "OTHER_CL_1", "CLASS_DESC", "ID_TYPE", "OTHER_TYPE", "OTHER_TY_1", "TYPE_DESCR", "DATA_SOURC", "DATASET_AC", "FARMING_SY", "CROP_PLANT",
+					"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "REGION", "PROVINCE", "CITYMUNI", "BARANGAY", "REMARKS", "MAIN_TYPE" ])
+
+					# calculate joined fields
+					calculateJoinedFields("union_false")
+
+					arcpy.Delete_management(dst)
+					arcpy.Rename_management(temp_union,dst)
+
 				# if does not exists, rename the the shapefile
 				else:
 					print "Renaming lulc layers"
