@@ -1,13 +1,44 @@
-__version__ = "0.2"
+__version__ = "0.3"
 __authors__ = "Jok Laurente"
 __email__ = ["jmelaurente@gmail.com"]
 __description__ = 'Union of LULC shapefiles'
 
 import arcpy
 import os
+import logging
+import time
+import argparse
+import csv
 
-input_directory = r"D:\union_lulc\input2"
-output_directory = r"D:\union_lulc\output"
+startTime = time.time()
+
+# Parse arguments
+parser = argparse.ArgumentParser(description='Union of LULC shapefiles')
+parser.add_argument('-i','--input_directory')
+parser.add_argument('-o','--output_directory')
+args = parser.parse_args()
+
+LOG_FILENAME = "union_lulc.log"
+logging.basicConfig(filename=LOG_FILENAME,level=logging.ERROR, format='%(asctime)s: %(levelname)s: %(message)s')
+
+logger = logging.getLogger("union_lulc.log")
+logger.setLevel(logging.DEBUG)
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+# create formatter
+formatter = logging.Formatter("%(asctime)s: %(levelname)s: %(message)s")
+# add formatter to ch
+ch.setFormatter(formatter)
+# add ch to logger
+logger.addHandler(ch)
+
+input_directory = args.input_directory
+output_directory = args.output_directory
+
+csv_file = open("union_lulc.csv", 'wb')
+spamwriter = csv.writer(csv_file, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+spamwriter.writerow(['Quad', 'Path', 'Remarks'])
 
 codeblock_union = """def getDominantValue(code1, code2):
 	# create a list for lulc types
@@ -131,43 +162,58 @@ if __name__ == "__main__":
 	for path, dirs, files in os.walk(input_directory,topdown=False):
 		for f in files:
 			if f.endswith(".shp"):
-				src = os.path.join(path,f)
-				print src
-				dst = os.path.join(output_directory,f.replace(".shp","_LULC.shp"))
-				temp_union = os.path.join(output_directory,f.replace(".shp","_union.shp"))
-				# if exists, union the duplicate shapefiles
-				if os.path.exists(dst):
-					print "Union duplicate values"
-					arcpy.Union_analysis([src,dst], temp_union, "NO_FID")
-					# add temporary field "UTYPE"
-					arcpy.AddField_management(temp_union, "UTYPE", "TEXT")
-					# get the dominant value by comparing the two objects
-					arcpy.CalculateField_management(temp_union, "UTYPE", "getDominantValue(!MAIN_TYPE!,!MAIN_TYP_1!)", "PYTHON_9.3", codeblock_union)
-					# create a layer for objects that have dominant value
-					arcpy.MakeFeatureLayer_management(temp_union, "union_true", "UTYPE <> 'SAME'")
-					# create a layer for objects that don't have dominant value
-					arcpy.MakeFeatureLayer_management(temp_union, "union_false", "UTYPE = 'SAME'")
+				try:
+					quad = f.replace(".shp","")
+					src = os.path.join(path,f)
+					dst = os.path.join(output_directory,f.replace(".shp","_LULC.shp"))
+					temp_union = os.path.join(output_directory,f.replace(".shp","_union.shp"))
+					logger.info("%s: Checking if shapefile exists in output directory", quad)
+					# if exists, union the duplicate shapefiles
+					if os.path.exists(dst):
+						logger.info("%s: Already exists! Executing union of duplicate shapefiles", quad)
+						arcpy.Union_analysis([src,dst], temp_union, "NO_FID")
 
-					# calculate other fields
-					calculateOtherFields("union_true")
+						logger.info("%s: Adding UTYPE temporary field", quad)
+						arcpy.AddField_management(temp_union, "UTYPE", "TEXT")
 
-					#get the nearest feature of union-false layer
-					arcpy.Near_analysis("union_false", "union_true")
+						logger.info("%s: Calculating dominant value by comparing the two objects", quad)
+						arcpy.CalculateField_management(temp_union, "UTYPE", "getDominantValue(!MAIN_TYPE!,!MAIN_TYP_1!)", "PYTHON_9.3", codeblock_union)
 
-					# join the fields union-true and union-false to identify what values would be assigned
-					arcpy.JoinField_management("union_false", "NEAR_FID", "union_true", "FID", ["CLASSIFICA", "RESOURCE_T", "ID_CLASS", "MAIN_CLASS", "OTHER_CLAS", "OTHER_CL_1", "CLASS_DESC", "ID_TYPE", "OTHER_TYPE", "OTHER_TY_1", "TYPE_DESCR", "DATA_SOURC", "DATASET_AC", "FARMING_SY", "CROP_PLANT",
-					"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "REGION", "PROVINCE", "CITYMUNI", "BARANGAY", "REMARKS", "MAIN_TYPE" ])
+						logger.info("%s: Creating a layer for objects that have dominant value", quad)
+						# create a layer for objects that have dominant value
+						arcpy.MakeFeatureLayer_management(temp_union, "union_true", "UTYPE <> 'SAME'")
 
-					# calculate joined fields
-					calculateJoinedFields("union_false")
+						logger.info("%s: Creating a layer for objects that don't have dominant value", quad)
+						# create a layer for objects that don't have dominant value
+						arcpy.MakeFeatureLayer_management(temp_union, "union_false", "UTYPE = 'SAME'")
 
-					arcpy.Delete_management(dst)
-					arcpy.Rename_management(temp_union,dst)
+						logger.info("%s: Calculating the other fields of the dominant value", quad)
+						calculateOtherFields("union_true")
 
-				# if does not exists, rename the the shapefile
-				else:
-					print "Renaming lulc layers"
-					arcpy.Copy_management(src, dst)
+						logger.info("%s: Calculating the nearest feature of objects that don't have dominant value", quad)
+						arcpy.Near_analysis("union_false", "union_true")
 
-#### integration of other fields
-#### check if geometries are the same
+						logger.info("%s: Joining the fields union-true and union-false to identify what values would be assigned", quad)
+						arcpy.JoinField_management("union_false", "NEAR_FID", "union_true", "FID", ["CLASSIFICA", "RESOURCE_T", "ID_CLASS", "MAIN_CLASS", "OTHER_CLAS", "OTHER_CL_1", "CLASS_DESC", "ID_TYPE", "OTHER_TYPE", "OTHER_TY_1", "TYPE_DESCR", "DATA_SOURC", "DATASET_AC", "FARMING_SY", "CROP_PLANT",
+						"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "REGION", "PROVINCE", "CITYMUNI", "BARANGAY", "REMARKS", "MAIN_TYPE" ])
+
+						logger.info("%s: Calculating the other fields of the joined value", quad)
+						calculateJoinedFields("union_false")
+
+						logger.info("%s: Deleting intermediate data", quad)
+						arcpy.Delete_management("union_false")
+						arcpy.Delete_management("union_true")
+						arcpy.Delete_management(dst)
+						arcpy.Rename_management(temp_union,dst)
+						spamwriter.writerow([quad, src, 'Union'])
+					# if does not exists, rename the the shapefile
+					else:
+						logger.info("%s: Does not exists. Renaming the shapefile", quad)
+						arcpy.Copy_management(src, dst)
+						spamwriter.writerow([quad, src, 'Rename'])
+				except Exception:
+					logger.exception("%s: Failed to rename/union", quad)
+					spamwriter.writerow([quad, src, 'Error'])
+csv_file.close()
+endTime = time.time()  # End timing
+print '\nElapsed Time:', str("{0:.2f}".format(round(endTime - startTime,2))), 'seconds'
