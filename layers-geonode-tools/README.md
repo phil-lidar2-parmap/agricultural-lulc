@@ -2,7 +2,7 @@
 
 ## union_lulc.py
 
-Script for renaming and merging of LULC shapefiles
+*Script for renaming and merging of LULC shapefiles*
 
 ```
 union_lulc.py [-h] [-i INPUT_DIRECTORY] [-o OUTPUT_DIRECTORY]
