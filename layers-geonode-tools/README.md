@@ -11,6 +11,7 @@ union_lulc.py [-h] [-i INPUT_DIRECTORY] [-o OUTPUT_DIRECTORY]
 ### Requirements
 ```
 ArcPy
+Folder containing LULC shapefiles
 ```
 
 ### Arguments
