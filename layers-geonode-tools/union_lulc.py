@@ -1,4 +1,4 @@
-__version__ = "0.3"
+__version__ = "0.3.1"
 __authors__ = "Jok Laurente"
 __email__ = ["jmelaurente@gmail.com"]
 __description__ = 'Union of LULC shapefiles'
@@ -214,6 +214,8 @@ if __name__ == "__main__":
 				except Exception:
 					logger.exception("%s: Failed to rename/union", quad)
 					spamwriter.writerow([quad, src, 'Error'])
+					arcpy.Delete_management("union_false")
+					arcpy.Delete_management("union_true")
 csv_file.close()
 endTime = time.time()  # End timing
 print '\nElapsed Time:', str("{0:.2f}".format(round(endTime - startTime,2))), 'seconds'
