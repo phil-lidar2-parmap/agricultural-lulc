@@ -1,4 +1,4 @@
-__version__ = "0.2.1"
+__version__ = "0.3"
 
 import os
 import sys
@@ -7,6 +7,7 @@ import time
 import shutil
 import argparse
 import logging
+import arcpy
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Renaming distinct LULC shapefiles')
@@ -62,8 +63,21 @@ for path, dirs, files in os.walk(input_directory,topdown=False):
 				spamwriter.writerow([f, path, file_extension, "Duplicate"])
 
 		except Exception:
-			logger.exception("Error encountered")
+			logger.exception("%s: Error encountered when renaming file", f)
 			spamwriter.writerow([f, path, file_extension, "Duplicate"])
+
+# calculate for area and delete unnecessary fields
+for shp in os.listdir(output_directory):
+	if shp.endswith(".shp"):
+		drop_fields = ["SHAPE_Leng", "SHAPE_Area"]
+		shp_path = os.path.join(output_directory, shp)
+		try:
+			logger.info("%s: Calculating area for each geometry", shp)
+			arcpy.CalculateField_management(shp_path, "AREA", "!shape.area@squaremeters!", "PYTHON_9.3")
+			logger.info("%s: Deleting unnecessary fields", shp)
+			arcpy.DeleteField_management(shp_path,drop_fields)
+		except Exception:
+			logger.exception("%s: Error encountered when deleting field", shp)
 
 endTime = time.time()  # End timing
 print '\nElapsed Time:', str("{0:.2f}".format(round(endTime - startTime,2))), 'seconds'
