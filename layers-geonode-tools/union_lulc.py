@@ -1,4 +1,4 @@
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __authors__ = "Jok Laurente"
 __email__ = ["jmelaurente@gmail.com"]
 __description__ = 'Union of LULC shapefiles'
@@ -116,7 +116,7 @@ def calculateOtherFields(layer):
 	arcpy.CalculateField_management(layer, "REMARKS", "checkType(!REMARKS!, !REMARKS_1!, !MAIN_TYPE!, !MAIN_TYP_1!, !UTYPE!)", "PYTHON_9.3", codeblock_type)
 	arcpy.CalculateField_management(layer, "MAIN_TYPE", "!UTYPE!", "PYTHON_9.3")
 	arcpy.DeleteField_management(layer, ["CLASSIFI_1", "RESOURCE_1", "ID_CLASS_1", "MAIN_CLA_1", "OTHER_CL_2", "OTHER_CL_3", "CLASS_DE_1", "ID_TYPE_1", "MAIN_TYP_1", "OTHER_TY_2", "OTHER_TY_3", "TYPE_DES_1", "DATA_SOU_1", "DATASET__1", "FARMING__1", "CROP_PLA_1","JAN_1", "FEB_1", "MAR_1",
-	"APR_1", "MAY_1", "JUN_1", "JUL_1", "AUG_1", "SEP_1", "OCT_1", "NOV_1", "DEC_1", "REGION_1", "PROVINCE_1", "CITYMUNI_1", "BARANGAY_1", "REMARKS_1", "AREA_1", "SHAPE_Le_1", "SHAPE_Ar_1"])
+	"APR_1", "MAY_1", "JUN_1", "JUL_1", "AUG_1", "SEP_1", "OCT_1", "NOV_1", "DEC_1", "REGION_1", "PROVINCE_1", "CITYMUNI_1", "BARANGAY_1", "REMARKS_1", "AREA_1", "SHAPE_Leng", "SHAPE_Area", "SHAPE_Le_1", "SHAPE_Ar_1"])
 
 def calculateJoinedFields(layer):
 	# calculate other fields
@@ -200,22 +200,28 @@ if __name__ == "__main__":
 						logger.info("%s: Calculating the other fields of the joined value", quad)
 						calculateJoinedFields("union_false")
 
+						logger.info("%s: Calculating area for each geometry", quad)
+						arcpy.CalculateField_management(temp_union, "AREA", "!shape.area@squaremeters!", "PYTHON_9.3")
+
 						logger.info("%s: Deleting intermediate data", quad)
 						arcpy.Delete_management("union_false")
 						arcpy.Delete_management("union_true")
 						arcpy.Delete_management(dst)
 						arcpy.Rename_management(temp_union,dst)
+						arcpy.Delete_management(src)
 						spamwriter.writerow([quad, src, 'Union'])
 					# if does not exists, rename the the shapefile
 					else:
 						logger.info("%s: Does not exists. Renaming the shapefile", quad)
 						arcpy.Copy_management(src, dst)
+						arcpy.Delete_management(src)
 						spamwriter.writerow([quad, src, 'Rename'])
 				except Exception:
-					logger.exception("%s: Failed to rename/union", quad)
+					logger.exception("%s: Failed to union", quad)
 					spamwriter.writerow([quad, src, 'Error'])
 					arcpy.Delete_management("union_false")
 					arcpy.Delete_management("union_true")
+					arcpy.Delete_management(temp_union)
 csv_file.close()
 endTime = time.time()  # End timing
 print '\nElapsed Time:', str("{0:.2f}".format(round(endTime - startTime,2))), 'seconds'
