@@ -1,4 +1,4 @@
-__version__ = "0.3"
+__version__ = "0.4"
 
 import os
 import sys
@@ -41,6 +41,7 @@ spamwriter.writerow(["Filename", "Path", "FileExt", "Remarks"])
 
 input_directory = args.input_directory
 output_directory = args.output_directory
+lulc_gdb = r"E:\PARMAP_10K\10K LULC Layers.gdb\LULC_Database"
 
 for path, dirs, files in os.walk(input_directory,topdown=False):
 	for f in sorted(files):
@@ -63,7 +64,7 @@ for path, dirs, files in os.walk(input_directory,topdown=False):
 				spamwriter.writerow([f, path, file_extension, "Duplicate"])
 
 		except Exception:
-			logger.exception("%s: Error encountered when renaming file", f)
+			logger.exception("%s: Error encountered", f)
 			spamwriter.writerow([f, path, file_extension, "Duplicate"])
 
 # calculate for area and delete unnecessary fields
@@ -71,13 +72,22 @@ for shp in os.listdir(output_directory):
 	if shp.endswith(".shp"):
 		drop_fields = ["SHAPE_Leng", "SHAPE_Area"]
 		shp_path = os.path.join(output_directory, shp)
+		quad = shp.split("_LULC",1)[0]
 		try:
-			logger.info("%s: Calculating area for each geometry", shp)
+			logger.info("%s: Calculating area for each geometry", quad)
 			arcpy.CalculateField_management(shp_path, "AREA", "!shape.area@squaremeters!", "PYTHON_9.3")
-			logger.info("%s: Deleting unnecessary fields", shp)
+
+			logger.info("%s: Deleting unnecessary fields", quad)
 			arcpy.DeleteField_management(shp_path,drop_fields)
+
+			logger.info("%s: Updating LULC Database", quad)
+			expression = "quadname = '{0}'".format(quad)
+			arcpy.MakeFeatureLayer_management(lulc_gdb, "lulc_gdb_layer", expression)
+			arcpy.CalculateField_management("lulc_gdb_layer", "is_renamed", '"Y"', "PYTHON_9.3")
+			arcpy.Delete_management("lulc_gdb_layer")
+			
 		except Exception:
-			logger.exception("%s: Error encountered when deleting field", shp)
+			logger.exception("%s: Error encountered", shp)
 
 endTime = time.time()  # End timing
 print '\nElapsed Time:', str("{0:.2f}".format(round(endTime - startTime,2))), 'seconds'
