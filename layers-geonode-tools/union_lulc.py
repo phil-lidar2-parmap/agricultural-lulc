@@ -1,4 +1,4 @@
-__version__ = "0.4"
+__version__ = "0.4.1"
 __authors__ = "Jok Laurente"
 __email__ = ["jmelaurente@gmail.com"]
 __description__ = 'Union of LULC shapefiles'
@@ -205,6 +205,8 @@ if __name__ == "__main__":
 						arcpy.CalculateField_management(temp_union, "AREA", "!shape.area@squaremeters!", "PYTHON_9.3")
 
 						logger.info("%s: Deleting intermediate data", quad)
+						arcpy.Delete_management("union_false")
+						arcpy.Delete_management("union_true")
 						arcpy.Delete_management(dst)
 						arcpy.Rename_management(temp_union,dst)
 						arcpy.Delete_management(src)
@@ -223,10 +225,10 @@ if __name__ == "__main__":
 				except Exception:
 					logger.exception("%s: Failed to union", quad)
 					spamwriter.writerow([quad, src, 'Error'])
-					arcpy.Delete_management(temp_union)
-				finally:
 					arcpy.Delete_management("union_false")
 					arcpy.Delete_management("union_true")
+					arcpy.Delete_management(temp_union)
+				finally:
 					arcpy.Delete_management("lulc_gdb_layer")
 csv_file.close()
 endTime = time.time()  # End timing
