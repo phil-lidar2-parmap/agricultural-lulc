@@ -1,4 +1,4 @@
-__version__ = "0.3.2"
+__version__ = "0.4"
 __authors__ = "Jok Laurente"
 __email__ = ["jmelaurente@gmail.com"]
 __description__ = 'Union of LULC shapefiles'
@@ -35,6 +35,7 @@ logger.addHandler(ch)
 
 input_directory = args.input_directory
 output_directory = args.output_directory
+lulc_gdb = r"E:\PARMAP_10K\10K LULC Layers.gdb\LULC_Database"
 
 csv_file = open("union_lulc.csv", 'wb')
 spamwriter = csv.writer(csv_file, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -204,8 +205,6 @@ if __name__ == "__main__":
 						arcpy.CalculateField_management(temp_union, "AREA", "!shape.area@squaremeters!", "PYTHON_9.3")
 
 						logger.info("%s: Deleting intermediate data", quad)
-						arcpy.Delete_management("union_false")
-						arcpy.Delete_management("union_true")
 						arcpy.Delete_management(dst)
 						arcpy.Rename_management(temp_union,dst)
 						arcpy.Delete_management(src)
@@ -216,12 +215,19 @@ if __name__ == "__main__":
 						arcpy.Copy_management(src, dst)
 						arcpy.Delete_management(src)
 						spamwriter.writerow([quad, src, 'Rename'])
+
+					logger.info("%s: Updating LULC Database", quad)
+					expression = "quadname = '{0}'".format(quad)
+					arcpy.MakeFeatureLayer_management(lulc_gdb, "lulc_gdb_layer", expression)
+					arcpy.CalculateField_management("lulc_gdb_layer", "is_renamed", '"Y"', "PYTHON_9.3")
 				except Exception:
 					logger.exception("%s: Failed to union", quad)
 					spamwriter.writerow([quad, src, 'Error'])
+					arcpy.Delete_management(temp_union)
+				finally:
 					arcpy.Delete_management("union_false")
 					arcpy.Delete_management("union_true")
-					arcpy.Delete_management(temp_union)
+					arcpy.Delete_management("lulc_gdb_layer")
 csv_file.close()
 endTime = time.time()  # End timing
 print '\nElapsed Time:', str("{0:.2f}".format(round(endTime - startTime,2))), 'seconds'
