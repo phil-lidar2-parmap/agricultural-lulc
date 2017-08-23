@@ -1,4 +1,4 @@
-__version__ = "0.4"
+__version__ = "0.4.1"
 
 import os
 import sys
@@ -84,10 +84,10 @@ for shp in os.listdir(output_directory):
 			expression = "quadname = '{0}'".format(quad)
 			arcpy.MakeFeatureLayer_management(lulc_gdb, "lulc_gdb_layer", expression)
 			arcpy.CalculateField_management("lulc_gdb_layer", "is_renamed", '"Y"', "PYTHON_9.3")
-			arcpy.Delete_management("lulc_gdb_layer")
-			
 		except Exception:
 			logger.exception("%s: Error encountered", shp)
+		finally:
+			arcpy.Delete_management("lulc_gdb_layer")
 
 endTime = time.time()  # End timing
 print '\nElapsed Time:', str("{0:.2f}".format(round(endTime - startTime,2))), 'seconds'
