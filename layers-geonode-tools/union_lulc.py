@@ -1,4 +1,4 @@
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 __authors__ = "Jok Laurente"
 __email__ = ["jmelaurente@gmail.com"]
 __description__ = 'Union of LULC shapefiles'
@@ -53,7 +53,7 @@ codeblock_union = """def getDominantValue(code1, code2):
 			# get nearest feature
 			utype = "SAME"
 		elif code1 in agri and code2 in agri:
-			# get nearest feautre
+			# get nearest featre
 			utype = "SAME"
 		elif code1 in non_agri and code2 in non_agri:
 			# get neartest feature
@@ -184,22 +184,25 @@ if __name__ == "__main__":
 						# create a layer for objects that have dominant value
 						arcpy.MakeFeatureLayer_management(temp_union, "union_true", "UTYPE <> 'SAME'")
 
-						logger.info("%s: Creating a layer for objects that don't have dominant value", quad)
-						# create a layer for objects that don't have dominant value
-						arcpy.MakeFeatureLayer_management(temp_union, "union_false", "UTYPE = 'SAME'")
-
 						logger.info("%s: Calculating the other fields of the dominant value", quad)
 						calculateOtherFields("union_true")
 
-						logger.info("%s: Calculating the nearest feature of objects that don't have dominant value", quad)
-						arcpy.Near_analysis("union_false", "union_true")
+						try:
+							logger.info("%s: Creating a layer for objects that don't have dominant value", quad)
+							# create a layer for objects that don't have dominant value
+							arcpy.MakeFeatureLayer_management(temp_union, "union_false", "UTYPE = 'SAME'")
 
-						logger.info("%s: Joining the fields union-true and union-false to identify what values would be assigned", quad)
-						arcpy.JoinField_management("union_false", "NEAR_FID", "union_true", "FID", ["CLASSIFICA", "RESOURCE_T", "ID_CLASS", "MAIN_CLASS", "OTHER_CLAS", "OTHER_CL_1", "CLASS_DESC", "ID_TYPE", "OTHER_TYPE", "OTHER_TY_1", "TYPE_DESCR", "DATA_SOURC", "DATASET_AC", "FARMING_SY", "CROP_PLANT",
-						"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "REGION", "PROVINCE", "CITYMUNI", "BARANGAY", "REMARKS", "MAIN_TYPE" ])
+							logger.info("%s: Calculating the nearest feature of objects that don't have dominant value", quad)
+							arcpy.Near_analysis("union_false", "union_true")
 
-						logger.info("%s: Calculating the other fields of the joined value", quad)
-						calculateJoinedFields("union_false")
+							logger.info("%s: Joining the fields union-true and union-false to identify what values would be assigned", quad)
+							arcpy.JoinField_management("union_false", "NEAR_FID", "union_true", "FID", ["CLASSIFICA", "RESOURCE_T", "ID_CLASS", "MAIN_CLASS", "OTHER_CLAS", "OTHER_CL_1", "CLASS_DESC", "ID_TYPE", "OTHER_TYPE", "OTHER_TY_1", "TYPE_DESCR", "DATA_SOURC", "DATASET_AC", "FARMING_SY", "CROP_PLANT",
+							"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "REGION", "PROVINCE", "CITYMUNI", "BARANGAY", "REMARKS", "MAIN_TYPE" ])
+
+							logger.info("%s: Calculating the other fields of the joined value", quad)
+							calculateJoinedFields("union_false")
+						except Exception:
+							logger.exception("%s: Failed to calculate nearest feature", quad)
 
 						logger.info("%s: Calculating area for each geometry", quad)
 						arcpy.CalculateField_management(temp_union, "AREA", "!shape.area@squaremeters!", "PYTHON_9.3")
